@@ -5,694 +5,1825 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <title>WebGuard - Free Web Security Scanner</title>
+
     <meta
       name="description"
-      content="WebGuard is a web security scanner for HTTPS, SSL/TLS, security headers, cookies, CORS, DNS, technologies and passive security configuration analysis."
+      content="WebGuard is a free web security scanner for HTTPS, SSL/TLS, security headers, cookies, CORS, DNS, technologies, ports and passive security analysis."
     />
 
     <meta
       name="keywords"
-      content="WebGuard, web security scanner, website security scanner, SSL checker, security headers checker, CORS checker"
+      content="WebGuard, web security scanner, website security scanner, free security scanner, SSL checker, TLS checker, security headers checker, CORS checker, DNS checker, OWASP scanner"
     />
 
     <meta name="robots" content="index, follow" />
 
-    <title>WebGuard - Web Security Scanner</title>
+    <link rel="canonical" href="https://webguard-43l3.onrender.com/" />
 
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+
+    <meta property="og:title" content="WebGuard - Free Web Security Scanner" />
+
+    <meta
+      property="og:description"
+      content="Scan websites for HTTPS, SSL/TLS, security headers, cookies, CORS, DNS, technologies and passive security issues."
     />
+
+    <meta property="og:url" content="https://webguard-43l3.onrender.com/" />
+
+    <meta property="og:site_name" content="WebGuard" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+
+    <meta name="twitter:title" content="WebGuard - Free Web Security Scanner" />
+
+    <meta
+      name="twitter:description"
+      content="Free web security scanner for HTTPS, SSL/TLS, headers, cookies, CORS, DNS and passive security analysis."
+    />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "WebGuard",
+        "url": "https://webguard-43l3.onrender.com/",
+        "description": "Free web security scanner for HTTPS, SSL/TLS, security headers, cookies, CORS, DNS, technologies and passive security analysis.",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "author": {
+          "@type": "Person",
+          "name": "Veeresh S.",
+          "url": "https://github.com/Shadow-varu"
+        }
+      }
+    </script>
+
+    <style>
+      :root {
+        --bg: #080b12;
+        --panel: #101521;
+        --panel-2: #151c2a;
+        --border: #263044;
+        --text: #eef3ff;
+        --muted: #9ba7bd;
+        --primary: #7c5cff;
+        --primary-2: #5b3df5;
+        --green: #20c997;
+        --yellow: #f5c542;
+        --red: #ff5c6c;
+        --blue: #4da3ff;
+        --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(
+            circle at top right,
+            rgba(124, 92, 255, 0.13),
+            transparent 32%
+          ),
+          var(--bg);
+        color: var(--text);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.6;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .container {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        border-bottom: 1px solid var(--border);
+        background: rgba(8, 11, 18, 0.92);
+        backdrop-filter: blur(14px);
+      }
+
+      .topbar-inner {
+        min-height: 72px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+      }
+
+      .brand-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, var(--primary), #3e7bff);
+        font-weight: 900;
+        box-shadow: 0 10px 30px rgba(124, 92, 255, 0.3);
+      }
+
+      .brand-name {
+        font-size: 20px;
+        font-weight: 800;
+      }
+
+      .brand-subtitle {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .version {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .hero {
+        padding: 72px 0 45px;
+        text-align: center;
+      }
+
+      .hero-badge {
+        display: inline-block;
+        padding: 7px 13px;
+        border: 1px solid rgba(124, 92, 255, 0.4);
+        border-radius: 999px;
+        background: rgba(124, 92, 255, 0.1);
+        color: #c8bfff;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 18px;
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-size: clamp(38px, 6vw, 70px);
+        line-height: 1.05;
+        letter-spacing: -2px;
+      }
+
+      .hero h1 span {
+        color: #a996ff;
+      }
+
+      .hero p {
+        max-width: 760px;
+        margin: 20px auto 30px;
+        color: var(--muted);
+        font-size: 17px;
+      }
+
+      .scan-box {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: rgba(16, 21, 33, 0.88);
+        box-shadow: var(--shadow);
+      }
+
+      .scan-form {
+        display: flex;
+        gap: 10px;
+      }
+
+      .scan-input {
+        flex: 1;
+        min-width: 0;
+        border: 1px solid var(--border);
+        outline: none;
+        border-radius: 12px;
+        background: #0b101a;
+        color: var(--text);
+        padding: 16px 18px;
+        font-size: 16px;
+      }
+
+      .scan-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.12);
+      }
+
+      .btn {
+        border: 0;
+        border-radius: 12px;
+        padding: 14px 22px;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: 0.2s ease;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--primary-2));
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.08);
+      }
+
+      .btn-secondary {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      .btn-secondary:hover {
+        border-color: var(--primary);
+      }
+
+      .error-card {
+        margin: 25px 0;
+        padding: 16px 18px;
+        border: 1px solid rgba(255, 92, 108, 0.4);
+        border-radius: 14px;
+        background: rgba(255, 92, 108, 0.08);
+        color: #ffb5bd;
+      }
+
+      .section {
+        margin: 28px 0;
+      }
+
+      .section-title {
+        margin: 0 0 15px;
+        font-size: 23px;
+      }
+
+      .section-description {
+        margin: -5px 0 18px;
+        color: var(--muted);
+      }
+
+      .card {
+        background: linear-gradient(
+          180deg,
+          rgba(21, 28, 42, 0.96),
+          rgba(16, 21, 33, 0.96)
+        );
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 22px;
+        box-shadow: var(--shadow);
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .grid-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .metric {
+        min-height: 120px;
+      }
+
+      .metric-label {
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+
+      .metric-value {
+        font-size: 27px;
+        font-weight: 850;
+        word-break: break-word;
+      }
+
+      .metric-small {
+        font-size: 14px;
+        color: var(--muted);
+        word-break: break-word;
+      }
+
+      .score-card {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 25px;
+        align-items: center;
+      }
+
+      .score {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        margin: auto;
+        background:
+          radial-gradient(circle, var(--panel) 60%, transparent 61%),
+          conic-gradient(var(--primary) calc(var(--score) * 1%), #252d40 0);
+        font-size: 38px;
+        font-weight: 900;
+      }
+
+      .risk {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 800;
+        background: rgba(124, 92, 255, 0.15);
+        color: #c8bfff;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 650px;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 13px 15px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+
+      th {
+        color: #c7d0e4;
+        background: #121927;
+        font-size: 13px;
+      }
+
+      td {
+        color: #dfe6f5;
+        font-size: 14px;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .status {
+        display: inline-block;
+        padding: 5px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 850;
+      }
+
+      .pass {
+        color: #9ff2d2;
+        background: rgba(32, 201, 151, 0.12);
+      }
+
+      .fail {
+        color: #ffadb5;
+        background: rgba(255, 92, 108, 0.12);
+      }
+
+      .review {
+        color: #ffe49a;
+        background: rgba(245, 197, 66, 0.12);
+      }
+
+      .code-box {
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #090d15;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 15px;
+        color: #bdc8dd;
+        font-family: Consolas, Monaco, monospace;
+        font-size: 13px;
+        max-height: 300px;
+        overflow: auto;
+      }
+
+      .finding {
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--primary);
+        border-radius: 12px;
+        padding: 17px;
+        background: rgba(9, 13, 21, 0.55);
+        margin-bottom: 12px;
+      }
+
+      .finding:last-child {
+        margin-bottom: 0;
+      }
+
+      .finding-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 8px;
+      }
+
+      .finding-title strong {
+        font-size: 16px;
+      }
+
+      .finding p {
+        margin: 7px 0;
+        color: var(--muted);
+      }
+
+      .empty {
+        color: var(--muted);
+        padding: 10px 0;
+      }
+
+      .report-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .feature {
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: rgba(16, 21, 33, 0.7);
+      }
+
+      .feature h3 {
+        margin: 0 0 7px;
+        font-size: 16px;
+      }
+
+      .feature p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .seo-content {
+        margin-top: 55px;
+      }
+
+      .seo-content h2 {
+        font-size: 26px;
+      }
+
+      .seo-content p {
+        color: var(--muted);
+      }
+
+      .notice {
+        margin-top: 15px;
+        padding: 13px 15px;
+        border-radius: 10px;
+        background: rgba(245, 197, 66, 0.08);
+        border: 1px solid rgba(245, 197, 66, 0.25);
+        color: #e8d89a;
+        font-size: 13px;
+      }
+
+      .footer {
+        margin-top: 70px;
+        border-top: 1px solid var(--border);
+        padding: 30px 0;
+        color: var(--muted);
+        text-align: center;
+        font-size: 13px;
+      }
+
+      .footer a {
+        color: #a996ff;
+        text-decoration: none;
+      }
+
+      .footer a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 850px) {
+        .grid-3,
+        .grid-4,
+        .features {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .score-card {
+          grid-template-columns: 1fr;
+        }
+
+        .score {
+          margin-bottom: 5px;
+        }
+      }
+
+      @media (max-width: 650px) {
+        .container {
+          width: min(100% - 20px, 1180px);
+        }
+
+        .topbar-inner {
+          min-height: 62px;
+        }
+
+        .brand-subtitle,
+        .version {
+          display: none;
+        }
+
+        .hero {
+          padding-top: 45px;
+        }
+
+        .scan-form {
+          flex-direction: column;
+        }
+
+        .grid-2,
+        .grid-3,
+        .grid-4,
+        .features {
+          grid-template-columns: 1fr;
+        }
+
+        .card {
+          padding: 17px;
+        }
+
+        .hero h1 {
+          letter-spacing: -1px;
+        }
+      }
+    </style>
   </head>
 
   <body>
+    {% set data = result|default({}, true) %}
+
+    <!-- =========================
+     TOP BAR
+========================= -->
+
     <header class="topbar">
-      <div class="brand">
-        <div class="brand-icon">🛡️</div>
+      <div class="container topbar-inner">
+        <a class="brand" href="/" aria-label="WebGuard Home">
+          <div class="brand-icon">WG</div>
 
-        <div>
-          <h1>WebGuard</h1>
+          <div>
+            <div class="brand-name">WebGuard</div>
 
-          <p>Web Security Scanner</p>
-        </div>
+            <div class="brand-subtitle">Web Security Scanner</div>
+          </div>
+        </a>
+
+        <div class="version">v4.0</div>
       </div>
-
-      <div class="version">v4.0</div>
     </header>
 
-    <main class="container">
+    <!-- =========================
+     MAIN
+========================= -->
+
+    <main>
+      <!-- HERO -->
+
       <section class="hero">
-        <div class="hero-content">
-          <span class="hero-badge"> 🛡️ SECURITY ANALYSIS PLATFORM </span>
+        <div class="container">
+          <div class="hero-badge">FREE WEB SECURITY ANALYSIS</div>
 
-          <h2>Scan. Analyze. Secure.</h2>
-
-          <p>
-            Analyze a website for common security configuration issues, SSL/TLS,
-            headers, cookies, CORS, DNS, technology and passive vulnerabilities.
-          </p>
-        </div>
-      </section>
-
-      <section class="scan-card">
-        <div class="section-title">
-          <span>🔎</span>
-
-          <div>
-            <h2>Security Scan</h2>
-
-            <p>Enter a website URL to begin analysis.</p>
-          </div>
-        </div>
-
-        <form method="POST" class="scan-form">
-          <input
-            type="url"
-            name="url"
-            placeholder="https://example.com"
-            value="{{ url }}"
-            required
-            autocomplete="url"
-          />
-
-          <button type="submit">🔍 Scan Website</button>
-        </form>
-
-        <div class="warning">
-          ⚠️ Scan only websites that you own or have permission to test.
-        </div>
-      </section>
-
-      {% if error %}
-
-      <section class="error-card">
-        <h3>❌ Scan Error</h3>
-
-        <p>{{ error }}</p>
-      </section>
-
-      {% endif %} {% if result %}
-
-      <section class="score-card">
-        <div class="score-circle">
-          <span> {{ result.security_score }} </span>
-
-          <small> /100 </small>
-        </div>
-
-        <div class="score-info">
-          <span class="small-label"> SECURITY SCORE </span>
-
-          <h2>{{ result.security_score }}/100</h2>
-
-          <span
-            class="risk {% if result.risk_level == 'Low' %} low {% elif result.risk_level == 'Medium' %} medium {% else %} high {% endif %}"
-          >
-            {{ result.risk_level }} Risk
-          </span>
-
-          <p>Overall security configuration assessment.</p>
-        </div>
-      </section>
-
-      <section class="grid-2">
-        <div class="info-card">
-          <span class="card-icon"> 🌐 </span>
-
-          <h3>Website</h3>
+          <h1>
+            Scan Your Website with
+            <span>WebGuard</span>
+          </h1>
 
           <p>
-            <b>Original:</b><br />
-            {{ result.original_url }}
+            Analyze HTTPS, SSL/TLS, security headers, cookies, CORS, DNS,
+            technologies, ports and passive security findings from one
+            dashboard.
           </p>
 
-          <p>
-            <b>Final:</b><br />
-            {{ result.final_url }}
-          </p>
-        </div>
+          <div class="scan-box">
+            <form class="scan-form" method="POST" action="/">
+              <input
+                class="scan-input"
+                type="url"
+                name="url"
+                placeholder="Enter website URL, e.g. https://example.com"
+                value="{{ scanned_url|default('', true) }}"
+                required
+                autocomplete="url"
+              />
 
-        <div class="info-card">
-          <span class="card-icon"> ⚡ </span>
-
-          <h3>Performance</h3>
-
-          <p>
-            <b>Status:</b>
-            {{ result.status_code }}
-          </p>
-
-          <p>
-            <b>Response Time:</b>
-            {{ result.response_time }} sec
-          </p>
-
-          <p>
-            <b>Redirects:</b>
-            {{ result.redirects }}
-          </p>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="card-heading">🔗 Redirect Chain</div>
-
-        {% for item in result.redirect_chain %}
-
-        <div class="redirect-item">
-          <span class="redirect-number"> {{ loop.index }} </span>
-
-          <div>
-            <strong> {{ item.url }} </strong>
-
-            <span> HTTP {{ item.status_code }} </span>
-          </div>
-        </div>
-
-        {% endfor %}
-      </section>
-
-      <section class="card">
-        <div class="card-heading">🔐 SSL / TLS</div>
-
-        <div class="detail-grid">
-          <div>
-            <span>Status</span>
-            <strong> {{ result.ssl.status }} </strong>
+              <button class="btn btn-primary" type="submit">
+                Scan Website
+              </button>
+            </form>
           </div>
 
-          <div>
-            <span>TLS Version</span>
-            <strong> {{ result.ssl.tls_version or "N/A" }} </strong>
-          </div>
-
-          <div>
-            <span>Cipher</span>
-            <strong> {{ result.ssl.cipher or "N/A" }} </strong>
-          </div>
-
-          <div>
-            <span>Days Remaining</span>
-            <strong> {{ result.ssl.days_remaining or "N/A" }} </strong>
-          </div>
-
-          <div>
-            <span>Issuer</span>
-            <strong> {{ result.ssl.issuer or "N/A" }} </strong>
-          </div>
-
-          <div>
-            <span>Expiry</span>
-            <strong> {{ result.ssl.expires or "N/A" }} </strong>
+          <div class="notice">
+            Use WebGuard only on websites and systems you own or have permission
+            to assess.
           </div>
         </div>
       </section>
 
-      <section class="card">
-        <div class="card-heading">🌐 DNS Records</div>
+      <div class="container">
+        <!-- ERROR -->
 
-        <div class="dns-grid">
-          {% for record_type, records in result.dns.items() %}
+        {% if error %}
 
-          <div class="dns-card">
-            <h3>{{ record_type }}</h3>
+        <div class="error-card">
+          <strong> Scan Error </strong>
 
-            {% if records %} {% for record in records %}
-
-            <div class="dns-value">{{ record }}</div>
-
-            {% endfor %} {% else %}
-
-            <div class="muted">No record detected</div>
-
-            {% endif %}
-          </div>
-
-          {% endfor %}
+          <div>{{ error }}</div>
         </div>
-      </section>
 
-      <section class="card">
-        <div class="card-heading">🧩 Technology Detection</div>
+        {% endif %} {% if data %}
 
-        <div class="technology-grid">
-          {% for tech in result.technology %}
+        <!-- =========================
+             SECURITY SCORE
+        ========================= -->
 
-          <div class="technology">
-            <strong> {{ tech.name }} </strong>
+        <section class="section">
+          <h2 class="section-title">Security Score</h2>
 
-            <span> {{ tech.value }} </span>
-          </div>
-
-          {% else %}
-
-          <p class="muted">No technology detected.</p>
-
-          {% endfor %}
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="card-heading">🛡️ HTTP Security Analysis</div>
-
-        <div class="detail-grid">
-          <div>
-            <span>Content-Type</span>
-            <strong> {{ result.http_security.content_type or "N/A" }} </strong>
-          </div>
-
-          <div>
-            <span>Server</span>
-            <strong> {{ result.http_security.server or "N/A" }} </strong>
-          </div>
-
-          <div>
-            <span>HSTS</span>
-            <strong> {{ result.http_security.hsts or "Not Detected" }} </strong>
-          </div>
-
-          <div>
-            <span>CSP</span>
-            <strong> {{ result.http_security.csp or "Not Detected" }} </strong>
-          </div>
-
-          <div>
-            <span>Cache-Control</span>
-            <strong>
-              {{ result.http_security.cache_control or "Not Detected" }}
-            </strong>
-          </div>
-
-          <div>
-            <span>Allowed Methods</span>
-            <strong>
-              {% if result.http_security.methods %} {{
-              result.http_security.methods | join(", ") }} {% else %} Not
-              Advertised {% endif %}
-            </strong>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="card-heading">🌍 CORS Analysis</div>
-
-        <div class="detail-grid">
-          <div>
-            <span>Status</span>
-            <strong> {{ result.cors.status }} </strong>
-          </div>
-
-          <div>
-            <span>Allow-Origin</span>
-            <strong> {{ result.cors.allow_origin or "Not Detected" }} </strong>
-          </div>
-
-          <div>
-            <span>Allow-Methods</span>
-            <strong> {{ result.cors.allow_methods or "Not Detected" }} </strong>
-          </div>
-
-          <div>
-            <span>Allow-Headers</span>
-            <strong> {{ result.cors.allow_headers or "Not Detected" }} </strong>
-          </div>
-
-          <div>
-            <span>Credentials</span>
-            <strong>
-              {{ result.cors.allow_credentials or "Not Detected" }}
-            </strong>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="card-heading">🔎 OWASP-style Checks</div>
-
-        <div class="owasp-grid">
-          {% for check in result.owasp %}
-
-          <div class="owasp-item">
-            <div>
-              <strong> {{ check.name }} </strong>
-
-              <p>{{ check.description }}</p>
+          <div class="card score-card">
+            <div
+              class="score"
+              style="--score: {{ data.security_score|default(0, true) }}"
+            >
+              {{ data.security_score|default(0, true) }}
             </div>
 
-            <span
-              class="status {% if check.status == 'PASS' %} pass {% elif check.status == 'FAIL' %} fail {% else %} review {% endif %}"
-            >
-              {{ check.status }}
-            </span>
+            <div>
+              <div class="metric-label">Overall Risk Level</div>
+
+              <div class="metric-value">
+                {{ data.risk_level|default("Unknown", true) }}
+              </div>
+
+              <span class="risk"> WebGuard Assessment </span>
+
+              <p class="section-description">
+                This score is a heuristic assessment based on the checks
+                performed by WebGuard. It is not a substitute for a professional
+                security assessment.
+              </p>
+            </div>
           </div>
+        </section>
 
-          {% endfor %}
-        </div>
-      </section>
+        <!-- =========================
+             WEBSITE INFORMATION
+        ========================= -->
 
-      <section class="card">
-        <div class="card-heading">🧱 Security Headers</div>
+        <section class="section">
+          <h2 class="section-title">Website Information</h2>
 
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Header</th>
-                <th>Value</th>
-              </tr>
-            </thead>
+          <div class="grid grid-3">
+            <div class="card metric">
+              <div class="metric-label">Original URL</div>
 
-            <tbody>
-              {% for header in result.headers.present %}
+              <div class="metric-small">
+                {{ data.original_url|default("N/A", true) }}
+              </div>
+            </div>
 
-              <tr>
-                <td>{{ header.name }}</td>
+            <div class="card metric">
+              <div class="metric-label">Final URL</div>
 
-                <td>{{ header.value }}</td>
-              </tr>
+              <div class="metric-small">
+                {{ data.final_url|default("N/A", true) }}
+              </div>
+            </div>
 
-              {% else %}
+            <div class="card metric">
+              <div class="metric-label">HTTP Status</div>
 
-              <tr>
-                <td colspan="2">No security headers detected.</td>
-              </tr>
+              <div class="metric-value">
+                {{ data.status_code|default("N/A", true) }}
+              </div>
+            </div>
 
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+            <div class="card metric">
+              <div class="metric-label">HTTPS</div>
 
-        {% if result.headers.missing %}
+              <div class="metric-value">
+                {% if data.https %} Enabled {% else %} Disabled {% endif %}
+              </div>
+            </div>
 
-        <div class="missing-box">
-          <strong> Missing Headers </strong>
+            <div class="card metric">
+              <div class="metric-label">Redirects</div>
 
-          <div class="tag-list">
-            {% for header in result.headers.missing %}
+              <div class="metric-value">
+                {{ data.redirects|default(0, true) }}
+              </div>
+            </div>
 
-            <span> {{ header }} </span>
+            <div class="card metric">
+              <div class="metric-label">Response Time</div>
 
-            {% endfor %}
+              <div class="metric-value">
+                {{ data.response_time|default("N/A", true) }} s
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
 
-        {% endif %}
-      </section>
+        <!-- =========================
+             PERFORMANCE
+        ========================= -->
 
-      <section class="card">
-        <div class="card-heading">🍪 Cookie Security</div>
+        <section class="section">
+          <h2 class="section-title">Performance</h2>
 
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Secure</th>
-                <th>HttpOnly</th>
-                <th>SameSite</th>
-              </tr>
-            </thead>
+          <div class="grid grid-3">
+            <div class="card metric">
+              <div class="metric-label">Response Time</div>
 
-            <tbody>
-              {% for cookie in result.cookies %}
+              <div class="metric-value">
+                {{ data.response_time|default("N/A", true) }} s
+              </div>
+            </div>
 
-              <tr>
-                <td>{{ cookie.name }}</td>
+            <div class="card metric">
+              <div class="metric-label">HTTP Status</div>
 
-                <td>{% if cookie.secure %} ✅ {% else %} ❌ {% endif %}</td>
+              <div class="metric-value">
+                {{ data.status_code|default("N/A", true) }}
+              </div>
+            </div>
 
-                <td>{% if cookie.httponly %} ✅ {% else %} ❌ {% endif %}</td>
+            <div class="card metric">
+              <div class="metric-label">Redirect Count</div>
 
-                <td>{% if cookie.samesite %} ✅ {% else %} ❌ {% endif %}</td>
-              </tr>
-
-              {% else %}
-
-              <tr>
-                <td colspan="4">No cookies detected.</td>
-              </tr>
-
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="card-heading">🔌 Common Port Scan</div>
-
-        <p class="muted">
-          Host: {{ result.ports.host }} | IP: {{ result.ports.ip or "N/A" }}
-        </p>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Port</th>
-                <th>Service</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {% for port in result.ports.open_ports %}
-
-              <tr>
-                <td>{{ port.port }}</td>
-
-                <td>{{ port.service }}</td>
-
-                <td>
-                  <span class="status review"> {{ port.status }} </span>
-                </td>
-              </tr>
-
-              {% else %}
-
-              <tr>
-                <td colspan="3">No common open ports detected.</td>
-              </tr>
-
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="card-heading">🛰️ Reconnaissance</div>
-
-        <div class="recon-grid">
-          <div class="recon-card">
-            <h3>robots.txt</h3>
-
-            <p>
-              Status:
-              <strong> {{ result.recon.robots.status }} </strong>
-            </p>
-
-            {% if result.recon.robots_analysis.user_agents %}
-
-            <p>
-              User Agents: {{ result.recon.robots_analysis.user_agents | join(",
-              ") }}
-            </p>
-
-            {% endif %} {% if result.recon.robots_analysis.disallowed %}
-
-            <p>Disallowed Paths:</p>
-
-            <ul>
-              {% for path in result.recon.robots_analysis.disallowed %}
-
-              <li>{{ path }}</li>
-
-              {% endfor %}
-            </ul>
-
-            {% endif %}
+              <div class="metric-value">
+                {{ data.redirects|default(0, true) }}
+              </div>
+            </div>
           </div>
+        </section>
 
-          <div class="recon-card">
-            <h3>Sitemap</h3>
+        <!-- =========================
+             REDIRECT CHAIN
+        ========================= -->
 
-            <p>
-              Status:
-              <strong> {{ result.recon.sitemap.status }} </strong>
-            </p>
+        <section class="section">
+          <h2 class="section-title">Redirect Chain</h2>
 
-            {% if result.recon.sitemap.url %}
+          <div class="card">
+            {% if data.redirect_chain %}
 
-            <p>{{ result.recon.sitemap.url }}</p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>URL</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
 
-            {% endif %}
-          </div>
+                <tbody>
+                  {% for item in data.redirect_chain %}
 
-          <div class="recon-card">
-            <h3>Discovered Subdomains</h3>
+                  <tr>
+                    <td>{{ loop.index }}</td>
 
-            {% if result.recon.subdomains %}
+                    <td>{{ item.url|default("N/A", true) }}</td>
 
-            <ul>
-              {% for sub in result.recon.subdomains %}
+                    <td>{{ item.status_code|default("N/A", true) }}</td>
+                  </tr>
 
-              <li>{{ sub.subdomain }} — {{ sub.status_code }}</li>
-
-              {% endfor %}
-            </ul>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
 
             {% else %}
 
-            <p class="muted">No common subdomains discovered.</p>
+            <div class="empty">No redirect chain information available.</div>
 
             {% endif %}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="card">
-        <div class="card-heading">🚨 Passive Vulnerability Analysis</div>
+        <!-- =========================
+             SSL / TLS
+        ========================= -->
 
-        {% if result.vulnerabilities %}
+        <section class="section">
+          <h2 class="section-title">SSL / TLS Analysis</h2>
 
-        <div class="vulnerability-grid">
-          {% for finding in result.vulnerabilities %}
+          <div class="grid grid-3">
+            <div class="card metric">
+              <div class="metric-label">Certificate Status</div>
 
-          <div class="vulnerability">
-            <div class="vulnerability-top">
-              <strong> {{ finding.name }} </strong>
-
-              <span
-                class="severity
-                        {{ finding.severity | lower }}
-                        "
-              >
-                {{ finding.severity }}
-              </span>
+              <div class="metric-value">
+                {{ data.ssl.status|default("N/A", true) }}
+              </div>
             </div>
 
-            <p>{{ finding.description }}</p>
+            <div class="card metric">
+              <div class="metric-label">TLS Version</div>
 
-            <div class="recommendation">
-              <strong> Recommendation </strong>
+              <div class="metric-value">
+                {{ data.ssl.tls_version|default("N/A", true) }}
+              </div>
+            </div>
 
-              <p>{{ finding.recommendation }}</p>
+            <div class="card metric">
+              <div class="metric-label">Cipher</div>
+
+              <div class="metric-small">
+                {{ data.ssl.cipher|default("N/A", true) }}
+              </div>
+            </div>
+
+            <div class="card metric">
+              <div class="metric-label">Issuer</div>
+
+              <div class="metric-small">
+                {{ data.ssl.issuer|default("N/A", true) }}
+              </div>
+            </div>
+
+            <div class="card metric">
+              <div class="metric-label">Subject</div>
+
+              <div class="metric-small">
+                {{ data.ssl.subject|default("N/A", true) }}
+              </div>
+            </div>
+
+            <div class="card metric">
+              <div class="metric-label">Certificate Expiry</div>
+
+              <div class="metric-small">
+                {{ data.ssl.expires|default("N/A", true) }}
+              </div>
+            </div>
+
+            <div class="card metric">
+              <div class="metric-label">Days Remaining</div>
+
+              <div class="metric-value">
+                {{ data.ssl.days_remaining|default("N/A", true) }}
+              </div>
             </div>
           </div>
+        </section>
 
-          {% endfor %}
-        </div>
+        <!-- =========================
+             DNS
+        ========================= -->
 
-        {% else %}
+        <section class="section">
+          <h2 class="section-title">DNS Analysis</h2>
 
-        <div class="success-box">
-          ✅ No passive vulnerability findings detected.
-        </div>
+          <div class="grid grid-2">
+            {% for record_type in ["A", "AAAA", "MX", "NS"] %}
 
-        {% endif %}
-      </section>
+            <div class="card">
+              <h3>{{ record_type }} Records</h3>
 
-      <section class="grid-3">
-        <div class="summary-card">
-          <span> Headers Present </span>
+              {% if data.dns[record_type] %}
 
-          <strong> {{ result.summary.headers_present }} </strong>
-        </div>
+              <div class="code-box">
+                {% for record in data.dns[record_type] %} {{ record }} {% endfor
+                %}
+              </div>
 
-        <div class="summary-card">
-          <span> Headers Missing </span>
+              {% else %}
 
-          <strong> {{ result.summary.headers_missing }} </strong>
-        </div>
+              <div class="empty">No {{ record_type }} records detected.</div>
 
-        <div class="summary-card">
-          <span> Findings </span>
-
-          <strong> {{ result.summary.findings }} </strong>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="card-heading">🚨 Security Findings</div>
-
-        {% if result.findings %}
-
-        <div class="findings-list">
-          {% for finding in result.findings %}
-
-          <div class="finding">
-            <div class="finding-header">
-              <strong> {{ finding.name }} </strong>
-
-              <span
-                class="severity
-                        {{ finding.severity | lower }}
-                        "
-              >
-                {{ finding.severity }}
-              </span>
+              {% endif %}
             </div>
 
-            <p>{{ finding.description }}</p>
+            {% endfor %}
+          </div>
+        </section>
+
+        <!-- =========================
+             TECHNOLOGY
+        ========================= -->
+
+        <section class="section">
+          <h2 class="section-title">Technology Detection</h2>
+
+          <div class="card">
+            {% if data.technology %}
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Technology</th>
+                    <th>Value</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {% for item in data.technology %}
+
+                  <tr>
+                    <td>{{ item.name|default("Unknown", true) }}</td>
+
+                    <td>{{ item.value|default("Detected", true) }}</td>
+                  </tr>
+
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            {% else %}
+
+            <div class="empty">No technologies detected.</div>
+
+            {% endif %}
+          </div>
+        </section>
+
+        <!-- =========================
+             HTTP SECURITY
+        ========================= -->
+
+        <section class="section">
+          <h2 class="section-title">HTTP Security Analysis</h2>
+
+          <div class="grid grid-2">
+            <div class="card">
+              <h3>HTTP Methods</h3>
+
+              {% if data.http_security.methods %}
+
+              <div class="code-box">
+                {{ data.http_security.methods|join(", ") }}
+              </div>
+
+              {% else %}
+
+              <div class="empty">No Allow header detected.</div>
+
+              {% endif %}
+            </div>
+
+            <div class="card">
+              <h3>Content-Type</h3>
+
+              <div class="metric-small">
+                {{ data.http_security.content_type|default("Not detected", true)
+                }}
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Server</h3>
+
+              <div class="metric-small">
+                {{ data.http_security.server|default("Not detected", true) }}
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>HSTS</h3>
+
+              <div class="metric-small">
+                {{ data.http_security.hsts|default("Not detected", true) }}
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>CSP</h3>
+
+              <div class="metric-small">
+                {{ data.http_security.csp|default("Not detected", true) }}
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Cache-Control</h3>
+
+              <div class="metric-small">
+                {{ data.http_security.cache_control|default("Not detected",
+                true) }}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================
+             CORS
+        ========================= -->
+
+        <section class="section">
+          <h2 class="section-title">CORS Analysis</h2>
+
+          <div class="grid grid-2">
+            <div class="card metric">
+              <div class="metric-label">Status</div>
+
+              <div class="metric-value">
+                {{ data.cors.status|default("Not Detected", true) }}
+              </div>
+            </div>
+
+            <div class="card metric">
+              <div class="metric-label">Allow-Origin</div>
+
+              <div class="metric-small">
+                {{ data.cors.allow_origin|default("Not detected", true) }}
+              </div>
+            </div>
+
+            <div class="card metric">
+              <div class="metric-label">Allow-Methods</div>
+
+              <div class="metric-small">
+                {{ data.cors.allow_methods|default("Not detected", true) }}
+              </div>
+            </div>
+
+            <div class="card metric">
+              <div class="metric-label">Allow-Headers</div>
+
+              <div class="metric-small">
+                {{ data.cors.allow_headers|default("Not detected", true) }}
+              </div>
+            </div>
+
+            <div class="card metric">
+              <div class="metric-label">Allow-Credentials</div>
+
+              <div class="metric-small">
+                {{ data.cors.allow_credentials|default("Not detected", true) }}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================
+             OWASP
+        ========================= -->
+
+        <section class="section">
+          <h2 class="section-title">OWASP-Style Security Checks</h2>
+
+          <div class="card">
+            {% if data.owasp %}
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Check</th>
+                    <th>Status</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {% for check in data.owasp %}
+
+                  <tr>
+                    <td>{{ check.name|default("Security Check", true) }}</td>
+
+                    <td>
+                      {% if check.status == "PASS" %}
+
+                      <span class="status pass"> PASS </span>
+
+                      {% elif check.status == "FAIL" %}
+
+                      <span class="status fail"> FAIL </span>
+
+                      {% else %}
+
+                      <span class="status review">
+                        {{ check.status|default("REVIEW", true) }}
+                      </span>
+
+                      {% endif %}
+                    </td>
+
+                    <td>
+                      {{ check.description|default("No description.", true) }}
+                    </td>
+                  </tr>
+
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            {% else %}
+
+            <div class="empty">No OWASP-style checks available.</div>
+
+            {% endif %}
+          </div>
+        </section>
+
+        <!-- =========================
+             SECURITY HEADERS
+        ========================= -->
+
+        <section class="section">
+          <h2 class="section-title">Security Headers</h2>
+
+          <div class="grid grid-2">
+            <div class="card">
+              <h3>Detected Headers</h3>
+
+              {% if data.headers.present %}
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Header</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {% for header in data.headers.present %}
+
+                    <tr>
+                      <td>{{ header.name|default("Unknown", true) }}</td>
+
+                      <td>{{ header.value|default("Present", true) }}</td>
+                    </tr>
+
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+
+              {% else %}
+
+              <div class="empty">No security headers detected.</div>
+
+              {% endif %}
+            </div>
+
+            <div class="card">
+              <h3>Missing Headers</h3>
+
+              {% if data.headers.missing %}
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Header</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {% for header in data.headers.missing %}
+
+                    <tr>
+                      <td>{{ header }}</td>
+                    </tr>
+
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+
+              {% else %}
+
+              <div class="empty">No required security headers are missing.</div>
+
+              {% endif %}
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================
+             COOKIES
+        ========================= -->
+
+        <section class="section">
+          <h2 class="section-title">Cookie Security</h2>
+
+          <div class="card">
+            {% if data.cookies %}
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cookie</th>
+                    <th>Secure</th>
+                    <th>HttpOnly</th>
+                    <th>SameSite</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {% for cookie in data.cookies %}
+
+                  <tr>
+                    <td>{{ cookie.name|default("Unknown", true) }}</td>
+
+                    <td>
+                      {% if cookie.secure %}
+
+                      <span class="status pass"> YES </span>
+
+                      {% else %}
+
+                      <span class="status fail"> NO </span>
+
+                      {% endif %}
+                    </td>
+
+                    <td>
+                      {% if cookie.httponly %}
+
+                      <span class="status pass"> YES </span>
+
+                      {% else %}
+
+                      <span class="status fail"> NO </span>
+
+                      {% endif %}
+                    </td>
+
+                    <td>
+                      {% if cookie.samesite %}
+
+                      <span class="status pass"> YES </span>
+
+                      {% else %}
+
+                      <span class="status fail"> NO </span>
+
+                      {% endif %}
+                    </td>
+                  </tr>
+
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            {% else %}
+
+            <div class="empty">No cookies detected.</div>
+
+            {% endif %}
+          </div>
+        </section>
+
+        <!-- =========================
+             PORT SCAN
+        ========================= -->
+
+        <section class="section">
+          <h2 class="section-title">Common TCP Port Scan</h2>
+
+          <div class="card">
+            <div class="grid grid-3">
+              <div class="metric">
+                <div class="metric-label">Host</div>
+
+                <div class="metric-small">
+                  {{ data.ports.host|default("N/A", true) }}
+                </div>
+              </div>
+
+              <div class="metric">
+                <div class="metric-label">IP Address</div>
+
+                <div class="metric-value">
+                  {{ data.ports.ip|default("N/A", true) }}
+                </div>
+              </div>
+
+              <div class="metric">
+                <div class="metric-label">Ports Scanned</div>
+
+                <div class="metric-value">
+                  {{ data.ports.scanned_ports|default(0, true) }}
+                </div>
+              </div>
+            </div>
+
+            <br />
+
+            {% if data.ports.open_ports %}
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Port</th>
+                    <th>Service</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {% for port in data.ports.open_ports %}
+
+                  <tr>
+                    <td>{{ port.port }}</td>
+
+                    <td>{{ port.service }}</td>
+
+                    <td>
+                      <span class="status pass">
+                        {{ port.status|default("Open", true) }}
+                      </span>
+                    </td>
+                  </tr>
+
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            {% else %}
+
+            <div class="empty">No common open ports detected.</div>
+
+            {% endif %}
+          </div>
+        </section>
+
+        <!-- =========================
+             RECON
+        ========================= -->
+
+        <section class="section">
+          <h2 class="section-title">Passive Reconnaissance</h2>
+
+          <div class="grid grid-2">
+            <div class="card">
+              <h3>robots.txt</h3>
+
+              <p>
+                Status:
+                <strong>
+                  {{ data.recon.robots.status|default("Unknown", true) }}
+                </strong>
+              </p>
+
+              <p>URL: {{ data.recon.robots.url|default("N/A", true) }}</p>
+
+              {% if data.recon.robots_analysis.disallowed %}
+
+              <h4>Disallowed Paths</h4>
+
+              <div class="code-box">
+                {% for path in data.recon.robots_analysis.disallowed %} {{ path
+                }} {% endfor %}
+              </div>
+
+              {% endif %} {% if data.recon.robots.content %}
+
+              <h4>robots.txt Content</h4>
+
+              <div class="code-box">{{ data.recon.robots.content }}</div>
+
+              {% endif %}
+            </div>
+
+            <div class="card">
+              <h3>Sitemap</h3>
+
+              <p>
+                Status:
+                <strong>
+                  {{ data.recon.sitemap.status|default("Unknown", true) }}
+                </strong>
+              </p>
+
+              <p>URL: {{ data.recon.sitemap.url|default("N/A", true) }}</p>
+
+              <h3>Discovered Subdomains</h3>
+
+              {% if data.recon.subdomains %}
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Hostname</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {% for subdomain in data.recon.subdomains %}
+
+                    <tr>
+                      <td>{{ subdomain.subdomain }}</td>
+
+                      <td>{{ subdomain.status_code }}</td>
+                    </tr>
+
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+
+              {% else %}
+
+              <div class="empty">No common subdomains discovered.</div>
+
+              {% endif %}
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================
+             VULNERABILITIES
+        ========================= -->
+
+        <section class="section">
+          <h2 class="section-title">Passive Vulnerability Analysis</h2>
+
+          <div class="card">
+            {% if data.vulnerabilities %} {% for vulnerability in
+            data.vulnerabilities %}
+
+            <div class="finding">
+              <div class="finding-title">
+                <strong>
+                  {{ vulnerability.name|default("Security Finding", true) }}
+                </strong>
+
+                <span
+                  class="status {% if vulnerability.severity == 'High' %} fail {% elif vulnerability.severity == 'Medium' %} review {% else %} pass {% endif %}"
+                >
+                  {{ vulnerability.severity|default("Low", true) }}
+                </span>
+              </div>
+
+              <p>
+                <strong> Description: </strong>
+
+                {{ vulnerability.description|default("No description
+                available.", true) }}
+              </p>
+
+              <p>
+                <strong> Recommendation: </strong>
+
+                {{ vulnerability.recommendation|default("Review this finding
+                manually.", true) }}
+              </p>
+            </div>
+
+            {% endfor %} {% else %}
+
+            <div class="empty">No passive vulnerability findings detected.</div>
+
+            {% endif %}
+          </div>
+        </section>
+
+        <!-- =========================
+             SECURITY SUMMARY
+        ========================= -->
+
+        <section class="section">
+          <h2 class="section-title">Security Summary</h2>
+
+          <div class="grid grid-4">
+            <div class="card metric">
+              <div class="metric-label">Headers Present</div>
+
+              <div class="metric-value">
+                {{ data.summary.headers_present|default(0, true) }}
+              </div>
+            </div>
+
+            <div class="card metric">
+              <div class="metric-label">Headers Missing</div>
+
+              <div class="metric-value">
+                {{ data.summary.headers_missing|default(0, true) }}
+              </div>
+            </div>
+
+            <div class="card metric">
+              <div class="metric-label">Cookies</div>
+
+              <div class="metric-value">
+                {{ data.summary.cookies_count|default(0, true) }}
+              </div>
+            </div>
+
+            <div class="card metric">
+              <div class="metric-label">Findings</div>
+
+              <div class="metric-value">
+                {{ data.summary.findings|default(0, true) }}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================
+             SECURITY FINDINGS
+        ========================= -->
+
+        <section class="section">
+          <h2 class="section-title">Security Findings</h2>
+
+          <div class="card">
+            {% if data.findings %} {% for finding in data.findings %}
+
+            <div class="finding">
+              <div class="finding-title">
+                <strong>
+                  {{ finding.name|default("Security Finding", true) }}
+                </strong>
+
+                <span
+                  class="status {% if finding.severity == 'High' %} fail {% elif finding.severity == 'Medium' %} review {% else %} pass {% endif %}"
+                >
+                  {{ finding.severity|default("Low", true) }}
+                </span>
+              </div>
+
+              <p>
+                {{ finding.description|default("No description available.",
+                true) }}
+              </p>
+
+              <p>
+                <strong> Recommendation: </strong>
+
+                {{ finding.recommendation|default("Review this finding
+                manually.", true) }}
+              </p>
+            </div>
+
+            {% endfor %} {% else %}
+
+            <div class="empty">No security findings were generated.</div>
+
+            {% endif %}
+          </div>
+        </section>
+
+        <!-- =========================
+             REPORTS
+        ========================= -->
+
+        <section class="section">
+          <h2 class="section-title">Reports</h2>
+
+          <div class="card">
+            <p class="section-description">
+              Download the current WebGuard scan results as an HTML or PDF
+              report.
+            </p>
+
+            <div class="report-actions">
+              <form method="POST" action="/generate-report">
+                <input
+                  type="hidden"
+                  name="report_data"
+                  value="{{ data|tojson|forceescape }}"
+                />
+
+                <button class="btn btn-secondary" type="submit">
+                  Download HTML Report
+                </button>
+              </form>
+
+              <form method="POST" action="/generate-pdf">
+                <input
+                  type="hidden"
+                  name="report_data"
+                  value="{{ data|tojson|forceescape }}"
+                />
+
+                <button class="btn btn-primary" type="submit">
+                  Download PDF Report
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        {% endif %}
+
+        <!-- =========================
+             SEO CONTENT
+        ========================= -->
+
+        <section class="seo-content section">
+          <div class="card">
+            <h2>Free Web Security Scanner</h2>
 
             <p>
-              <b> Recommendation: </b>
-
-              {{ finding.recommendation }}
+              WebGuard is a web-based security analysis tool designed to help
+              developers, students and security enthusiasts understand the
+              security posture of a website through passive and non-destructive
+              checks.
             </p>
+
+            <p>
+              The scanner analyzes HTTPS configuration, SSL/TLS certificate
+              information, HTTP security headers, cookies, CORS configuration,
+              DNS records, detected technologies, common TCP ports and selected
+              passive security findings.
+            </p>
+
+            <div class="features">
+              <div class="feature">
+                <h3>HTTPS & SSL/TLS</h3>
+
+                <p>
+                  Check HTTPS status, TLS version, certificate information and
+                  expiry.
+                </p>
+              </div>
+
+              <div class="feature">
+                <h3>Security Headers</h3>
+
+                <p>
+                  Analyze CSP, HSTS, X-Frame-Options, Referrer-Policy and other
+                  headers.
+                </p>
+              </div>
+
+              <div class="feature">
+                <h3>Cookie Security</h3>
+
+                <p>Review Secure, HttpOnly and SameSite cookie attributes.</p>
+              </div>
+
+              <div class="feature">
+                <h3>CORS Analysis</h3>
+
+                <p>
+                  Inspect common CORS response headers and wildcard
+                  configurations.
+                </p>
+              </div>
+
+              <div class="feature">
+                <h3>DNS Analysis</h3>
+
+                <p>Inspect A, AAAA, MX and NS DNS records.</p>
+              </div>
+
+              <div class="feature">
+                <h3>Technology Detection</h3>
+
+                <p>
+                  Identify selected web technologies from headers and page
+                  content.
+                </p>
+              </div>
+
+              <div class="feature">
+                <h3>OWASP-Style Checks</h3>
+
+                <p>
+                  Review selected security controls using practical
+                  OWASP-aligned checks.
+                </p>
+              </div>
+
+              <div class="feature">
+                <h3>Passive Recon</h3>
+
+                <p>
+                  Inspect robots.txt, sitemap information and common subdomain
+                  responses.
+                </p>
+              </div>
+
+              <div class="feature">
+                <h3>Security Reports</h3>
+
+                <p>
+                  Export scan results as HTML and PDF reports for documentation.
+                </p>
+              </div>
+            </div>
+
+            <div class="notice">
+              WebGuard provides automated security observations and should not
+              be treated as a complete penetration test or guarantee that a
+              website is secure.
+            </div>
           </div>
-
-          {% endfor %}
-        </div>
-
-        {% else %}
-
-        <div class="success-box">✅ No security findings detected.</div>
-
-        {% endif %}
-      </section>
-
-      <section class="report-card">
-        <h2>📄 Generate Security Report</h2>
-
-        <p>Download a complete report of this scan.</p>
-
-        <div class="report-buttons">
-          <form method="POST" action="/generate-report">
-            <input
-              type="hidden"
-              name="report_data"
-              value="{{ result | tojson | forceescape }}"
-            />
-
-            <button type="submit" class="report-button">
-              📄 Download HTML
-            </button>
-          </form>
-
-          <form method="POST" action="/generate-pdf">
-            <input
-              type="hidden"
-              name="report_data"
-              value="{{ result | tojson | forceescape }}"
-            />
-
-            <button type="submit" class="report-button pdf">
-              📑 Download PDF
-            </button>
-          </form>
-        </div>
-      </section>
-
-      {% endif %}
+        </section>
+      </div>
     </main>
 
-    <footer>
-      <p>🛡️ WebGuard v4.0 — Web Security Scanner</p>
+    <!-- =========================
+     FOOTER
+========================= -->
 
-      <p>For authorized security testing only.</p>
+    <footer class="footer">
+      <div class="container">
+        <strong> WebGuard </strong>
+
+        &nbsp;•&nbsp; Free Web Security Scanner
+
+        <br /><br />
+
+        Developed by
+
+        <strong>
+          <a
+            href="https://github.com/Shadow-varu"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Veeresh S.
+          </a>
+        </strong>
+
+        &nbsp;•&nbsp;
+
+        <a
+          href="https://github.com/Shadow-varu/WebGuard"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          GitHub
+        </a>
+
+        <br /><br />
+
+        Built with Python, Flask, HTML and CSS.
+
+        <br />
+
+        Use only on systems you own or are authorized to test.
+      </div>
     </footer>
   </body>
 </html>
