@@ -1,31 +1,56 @@
-from flask import Flask, render_template, request, send_file, make_response
+from flask import (
+    Flask,
+    render_template,
+    request,
+    send_file,
+    make_response
+)
+
 import io
-import json
 import ipaddress
+import json
 import socket
+from urllib.parse import urlparse
 
-from scanner import scan_url
-
-from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
     Spacer,
-    Table,
-    TableStyle
+    Preformatted
 )
+
+from scanner import scan_url
+
 
 app = Flask(__name__)
 
+# ============================================================
+# WEBGUARD CONFIGURATION
+# ============================================================
+
+APP_NAME = "WebGuard"
+APP_VERSION = "4.0"
+
+LIVE_URL = "https://webguard-43l3.onrender.com"
+GITHUB_URL = "https://github.com/Shadow-varu/WebGuard"
+
+MAX_REPORT_SIZE = 5 * 1024 * 1024
+
 
 # ============================================================
-# SECURITY VALIDATION
+# HOST VALIDATION
 # ============================================================
 
 def is_private_or_local_host(hostname):
+    """
+    Blocks obvious local/private IP targets.
+
+    WebGuard is intended for websites and systems
+    that the user owns or is authorized to assess.
+    """
+
     if not hostname:
         return True
 
@@ -34,9 +59,9 @@ def is_private_or_local_host(hostname):
     blocked_names = {
         "localhost",
         "localhost.localdomain",
+        "local",
         "ip6-localhost",
-        "ip6-loopback",
-        "local"
+        "ip6-loopback"
     }
 
     if hostname in blocked_names:
@@ -46,72 +71,77 @@ def is_private_or_local_host(hostname):
     try:
         ip = ipaddress.ip_address(hostname)
 
-        return (
+        if (
             ip.is_private
             or ip.is_loopback
             or ip.is_link_local
             or ip.is_reserved
             or ip.is_multicast
             or ip.is_unspecified
-        )
+        ):
+            return True
 
     except ValueError:
+        # Hostname is not an IP address.
         pass
-
-    # Domain name
-    # NOTE:
-    # We do NOT reject normal public domains just because
-    # DNS resolution fails here.
-    #
-    # This prevents example.com from being incorrectly
-    # classified as a private/local address.
 
     return False
 
 
+# ============================================================
+# URL VALIDATION
+# ============================================================
+
 def validate_target(url):
+    """
+    Validate target URL before scanning.
+    """
+
     if not url:
         return False, "Please enter a website URL."
 
     url = url.strip()
 
+    # Add HTTPS automatically
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
 
     try:
-        from urllib.parse import urlparse
-
         parsed = urlparse(url)
-
-        if parsed.scheme not in ("http", "https"):
-            return False, "Only HTTP and HTTPS URLs are allowed."
-
-        if not parsed.hostname:
-            return False, "Invalid website URL."
-
-        hostname = parsed.hostname
-
-        if is_private_or_local_host(hostname):
-            return (
-                False,
-                "Private or local IP addresses are not allowed."
-            )
-
-        return True, url
-
     except Exception:
-        return False, "Invalid website URL."
+        return False, "Invalid URL."
+
+    if parsed.scheme.lower() not in ("http", "https"):
+        return False, "Only HTTP and HTTPS URLs are allowed."
+
+    if not parsed.hostname:
+        return False, "Please enter a valid hostname."
+
+    hostname = parsed.hostname
+
+    if is_private_or_local_host(hostname):
+        return False, (
+            "Private, loopback, local or reserved IP addresses "
+            "are not allowed."
+        )
+
+    return True, url
 
 
 # ============================================================
-# JSON HELPER
+# SAFE JSON
 # ============================================================
 
 def safe_json(data):
+    """
+    Convert Python data into JSON safely.
+    """
+
     try:
         return json.dumps(
             data,
             indent=2,
+            ensure_ascii=False,
             default=str
         )
     except Exception:
@@ -119,7 +149,7 @@ def safe_json(data):
 
 
 # ============================================================
-# HOME / SCANNER
+# HOME PAGE
 # ============================================================
 
 @app.route("/", methods=["GET", "POST"])
@@ -127,295 +157,177 @@ def index():
 
     result = None
     error = None
-    scanned_url = ""
+    target_url = ""
 
     if request.method == "POST":
 
-        scanned_url = request.form.get(
-            "url",
-            ""
-        ).strip()
+        target_url = request.form.get("url", "").strip()
 
-        valid, validated_url = validate_target(
-            scanned_url
-        )
+        valid, validated_url = validate_target(target_url)
 
         if not valid:
             error = validated_url
 
-            return render_template(
-                "index.html",
-                result=None,
-                error=error,
-                scanned_url=scanned_url
-            )
+        else:
+            try:
+                result = scan_url(validated_url)
 
-        try:
-
-            result = scan_url(
-                validated_url
-            )
-
-            if not result:
-                error = "Scanner returned no result."
-
-        except Exception as exc:
-
-            error = f"Scan failed: {str(exc)}"
+            except Exception as exc:
+                error = f"Scan failed: {str(exc)}"
 
     return render_template(
         "index.html",
         result=result,
         error=error,
-        scanned_url=scanned_url
+        target_url=target_url
     )
+
+
+# ============================================================
+# ROBOTS.TXT
+# ============================================================
+
+@app.route("/robots.txt")
+def robots_txt():
+
+    robots = f"""User-agent: *
+Allow: /
+
+Sitemap: {LIVE_URL}/sitemap.xml
+"""
+
+    response = make_response(robots)
+    response.headers["Content-Type"] = "text/plain; charset=utf-8"
+
+    return response
+
+
+# ============================================================
+# SITEMAP.XML
+# ============================================================
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+
+    sitemap = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+    <url>
+        <loc>{LIVE_URL}/</loc>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+
+</urlset>
+"""
+
+    response = make_response(sitemap)
+    response.headers["Content-Type"] = "application/xml; charset=utf-8"
+
+    return response
 
 
 # ============================================================
 # HTML REPORT
 # ============================================================
 
-@app.route(
-    "/generate-report",
-    methods=["POST"]
-)
+@app.route("/generate-report", methods=["POST"])
 def generate_report():
 
-    report_data = request.form.get(
-        "report_data",
-        ""
-    )
+    raw_data = request.form.get("report_data", "")
 
-    if not report_data:
-        return "No report data available.", 400
+    if not raw_data:
+        return "No report data provided.", 400
+
+    if len(raw_data) > MAX_REPORT_SIZE:
+        return "Report data is too large.", 413
 
     try:
-
-        result = json.loads(
-            report_data
-        )
+        report_data = json.loads(raw_data)
 
     except json.JSONDecodeError:
-
         return "Invalid report data.", 400
 
-    html = build_html_report(
-        result
+    formatted_json = safe_json(report_data)
+
+    target = (
+        report_data.get("final_url")
+        or report_data.get("original_url")
+        or "Unknown Target"
     )
 
-    response = make_response(
-        html
-    )
-
-    response.headers[
-        "Content-Type"
-    ] = "text/html"
-
-    response.headers[
-        "Content-Disposition"
-    ] = (
-        "attachment; "
-        "filename=webguard_security_report.html"
-    )
-
-    return response
-
-
-def build_html_report(result):
-
-    score = result.get(
+    score = report_data.get(
         "security_score",
         "N/A"
     )
 
-    risk = result.get(
+    risk = report_data.get(
         "risk_level",
         "N/A"
     )
 
-    original_url = result.get(
-        "original_url",
-        "N/A"
-    )
-
-    final_url = result.get(
-        "final_url",
-        "N/A"
-    )
-
-    status_code = result.get(
-        "status_code",
-        "N/A"
-    )
-
-    response_time = result.get(
-        "response_time",
-        "N/A"
-    )
-
-    sections = [
-        (
-            "SSL / TLS",
-            result.get("ssl", {})
-        ),
-        (
-            "DNS Information",
-            result.get("dns", {})
-        ),
-        (
-            "Technology Detection",
-            result.get("technology", {})
-        ),
-        (
-            "Security Headers",
-            result.get("headers", {})
-        ),
-        (
-            "Cookie Security",
-            result.get("cookies", [])
-        ),
-        (
-            "CORS Analysis",
-            result.get("cors", {})
-        ),
-        (
-            "OWASP-style Checks",
-            result.get("owasp", {})
-        ),
-        (
-            "Port Scan",
-            result.get("ports", {})
-        ),
-        (
-            "Reconnaissance",
-            result.get("recon", {})
-        ),
-        (
-            "Passive Vulnerability Analysis",
-            result.get("vulnerabilities", [])
-        ),
-        (
-            "Security Findings",
-            result.get("findings", [])
-        )
-    ]
-
-    sections_html = ""
-
-    for title, data in sections:
-
-        sections_html += f"""
-        <div class="card">
-            <h2>{title}</h2>
-            <pre>{safe_json(data)}</pre>
-        </div>
-        """
-
-    html = f"""
-<!DOCTYPE html>
-<html>
+    html = f"""<!DOCTYPE html>
+<html lang="en">
 <head>
 
 <meta charset="UTF-8">
 
-<title>
-WebGuard Security Report
-</title>
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>WebGuard Security Report</title>
 
 <style>
 
 body {{
-    font-family:
-        Arial,
-        sans-serif;
-
-    background:
-        #0b1220;
-
-    color:
-        #e8eefc;
-
-    margin:
-        0;
-
-    padding:
-        40px;
+    font-family: Arial, sans-serif;
+    background: #0b0b12;
+    color: #eeeeee;
+    margin: 0;
+    padding: 40px;
 }}
 
 .container {{
-    max-width:
-        1100px;
-
-    margin:
-        auto;
+    max-width: 1000px;
+    margin: auto;
 }}
 
 h1 {{
-    color:
-        #29a9ff;
+    color: #8b5cf6;
 }}
 
 h2 {{
-    color:
-        #72c7ff;
+    margin-top: 35px;
+    color: #c4b5fd;
 }}
 
 .card {{
-    background:
-        #141f33;
-
-    border:
-        1px solid #2a3a55;
-
-    border-radius:
-        12px;
-
-    padding:
-        20px;
-
-    margin-bottom:
-        20px;
+    background: #151521;
+    border: 1px solid #2b2b40;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
 }}
 
 .score {{
-    font-size:
-        48px;
-
-    font-weight:
-        bold;
-}}
-
-table {{
-    width:
-        100%;
-
-    border-collapse:
-        collapse;
-}}
-
-th,
-td {{
-    padding:
-        10px;
-
-    border-bottom:
-        1px solid #30415e;
-
-    text-align:
-        left;
-}}
-
-th {{
-    color:
-        #72c7ff;
+    font-size: 42px;
+    font-weight: bold;
 }}
 
 pre {{
-    white-space:
-        pre-wrap;
+    background: #09090f;
+    padding: 20px;
+    border-radius: 10px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}}
 
-    word-break:
-        break-word;
+.footer {{
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #333;
+    color: #999;
 }}
 
 </style>
@@ -426,62 +338,55 @@ pre {{
 
 <div class="container">
 
-<h1>
-🛡️ WebGuard Security Report
-</h1>
+<h1>WebGuard Security Report</h1>
 
 <div class="card">
 
-<h2>
-Security Score
-</h2>
+<strong>Target:</strong>
+{target}
+
+<br><br>
+
+<strong>Security Score:</strong>
 
 <div class="score">
 {score}/100
 </div>
 
-<p>
-Risk Level:
-<strong>{risk}</strong>
-</p>
+<strong>Risk Level:</strong>
+{risk}
 
 </div>
 
+<h2>Scan Results</h2>
 
 <div class="card">
 
-<h2>
-Website Information
-</h2>
-
-<table>
-
-<tr>
-<th>Original URL</th>
-<td>{original_url}</td>
-</tr>
-
-<tr>
-<th>Final URL</th>
-<td>{final_url}</td>
-</tr>
-
-<tr>
-<th>Status Code</th>
-<td>{status_code}</td>
-</tr>
-
-<tr>
-<th>Response Time</th>
-<td>{response_time}</td>
-</tr>
-
-</table>
+<pre>{formatted_json}</pre>
 
 </div>
 
+<div class="footer">
 
-{sections_html}
+<strong>WebGuard</strong> — Web Security Scanner
+
+<br><br>
+
+Developed by <strong>Veeresh S.</strong>
+
+<br><br>
+
+GitHub:
+<a href="{GITHUB_URL}" target="_blank">
+{GITHUB_URL}
+</a>
+
+<br><br>
+
+Use WebGuard only on websites and systems
+you own or are authorized to assess.
+
+</div>
 
 </div>
 
@@ -489,105 +394,76 @@ Website Information
 </html>
 """
 
-    return html
+    response = make_response(html)
+
+    response.headers["Content-Type"] = "text/html; charset=utf-8"
+
+    response.headers[
+        "Content-Disposition"
+    ] = "attachment; filename=WebGuard_Security_Report.html"
+
+    return response
 
 
 # ============================================================
 # PDF REPORT
 # ============================================================
 
-@app.route(
-    "/generate-pdf",
-    methods=["POST"]
-)
+@app.route("/generate-pdf", methods=["POST"])
 def generate_pdf():
 
-    report_data = request.form.get(
-        "report_data",
-        ""
-    )
+    raw_data = request.form.get("report_data", "")
 
-    if not report_data:
-        return "No report data available.", 400
+    if not raw_data:
+        return "No report data provided.", 400
+
+    if len(raw_data) > MAX_REPORT_SIZE:
+        return "Report data is too large.", 413
 
     try:
-
-        result = json.loads(
-            report_data
-        )
+        report_data = json.loads(raw_data)
 
     except json.JSONDecodeError:
-
         return "Invalid report data.", 400
+
+    target = (
+        report_data.get("final_url")
+        or report_data.get("original_url")
+        or "Unknown Target"
+    )
+
+    score = report_data.get(
+        "security_score",
+        "N/A"
+    )
+
+    risk = report_data.get(
+        "risk_level",
+        "N/A"
+    )
+
+    formatted_json = safe_json(report_data)
 
     pdf_buffer = io.BytesIO()
 
     document = SimpleDocTemplate(
         pdf_buffer,
         pagesize=A4,
-        rightMargin=35,
-        leftMargin=35,
-        topMargin=35,
-        bottomMargin=35
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=40,
+        bottomMargin=40
     )
 
     styles = getSampleStyleSheet()
 
-    title_style = ParagraphStyle(
-        "WebGuardTitle",
-        parent=styles["Title"],
-        alignment=TA_CENTER,
-        fontSize=22,
-        spaceAfter=20
-    )
-
-    heading_style = ParagraphStyle(
-        "WebGuardHeading",
-        parent=styles["Heading2"],
-        fontSize=15,
-        spaceBefore=15,
-        spaceAfter=10
-    )
-
-    body_style = ParagraphStyle(
-        "WebGuardBody",
-        parent=styles["BodyText"],
-        fontSize=9,
-        leading=13
-    )
+    title_style = styles["Title"]
+    heading_style = styles["Heading2"]
+    normal_style = styles["BodyText"]
 
     story = []
 
-    score = result.get(
-        "security_score",
-        "N/A"
-    )
-
-    risk = result.get(
-        "risk_level",
-        "N/A"
-    )
-
-    original_url = result.get(
-        "original_url",
-        "N/A"
-    )
-
-    final_url = result.get(
-        "final_url",
-        "N/A"
-    )
-
-    status_code = result.get(
-        "status_code",
-        "N/A"
-    )
-
-    response_time = result.get(
-        "response_time",
-        "N/A"
-    )
-
+    # Title
     story.append(
         Paragraph(
             "WebGuard Security Report",
@@ -596,213 +472,120 @@ def generate_pdf():
     )
 
     story.append(
-        Paragraph(
-            f"<b>Security Score:</b> "
-            f"{score}/100",
-            body_style
-        )
-    )
-
-    story.append(
-        Paragraph(
-            f"<b>Risk Level:</b> "
-            f"{risk}",
-            body_style
-        )
-    )
-
-    story.append(
         Spacer(1, 15)
     )
 
-    website_table = Table(
-        [
-            ["Field", "Value"],
-            ["Original URL", str(original_url)],
-            ["Final URL", str(final_url)],
-            ["Status Code", str(status_code)],
-            ["Response Time", str(response_time)]
-        ],
-        colWidths=[
-            150,
-            350
-        ]
-    )
-
-    website_table.setStyle(
-        TableStyle(
-            [
-                (
-                    "BACKGROUND",
-                    (0, 0),
-                    (-1, 0),
-                    colors.HexColor("#1d3557")
-                ),
-                (
-                    "TEXTCOLOR",
-                    (0, 0),
-                    (-1, 0),
-                    colors.white
-                ),
-                (
-                    "GRID",
-                    (0, 0),
-                    (-1, -1),
-                    0.5,
-                    colors.grey
-                ),
-                (
-                    "VALIGN",
-                    (0, 0),
-                    (-1, -1),
-                    "TOP"
-                ),
-                (
-                    "FONTNAME",
-                    (0, 0),
-                    (-1, 0),
-                    "Helvetica-Bold"
-                ),
-                (
-                    "FONTSIZE",
-                    (0, 0),
-                    (-1, -1),
-                    8
-                ),
-                (
-                    "BOTTOMPADDING",
-                    (0, 0),
-                    (-1, -1),
-                    7
-                ),
-                (
-                    "TOPPADDING",
-                    (0, 0),
-                    (-1, -1),
-                    7
-                )
-            ]
+    # Target
+    story.append(
+        Paragraph(
+            f"<b>Target:</b> {target}",
+            normal_style
         )
     )
 
     story.append(
-        website_table
+        Spacer(1, 10)
     )
 
-    sections = [
-        (
-            "SSL / TLS",
-            result.get("ssl", {})
-        ),
-        (
-            "DNS Information",
-            result.get("dns", {})
-        ),
-        (
-            "Technology Detection",
-            result.get("technology", {})
-        ),
-        (
-            "Security Headers",
-            result.get("headers", {})
-        ),
-        (
-            "Cookie Security",
-            result.get("cookies", [])
-        ),
-        (
-            "CORS Analysis",
-            result.get("cors", {})
-        ),
-        (
-            "OWASP-style Checks",
-            result.get("owasp", {})
-        ),
-        (
-            "Port Scan",
-            result.get("ports", {})
-        ),
-        (
-            "Reconnaissance",
-            result.get("recon", {})
-        ),
-        (
-            "Passive Vulnerability Analysis",
-            result.get(
-                "vulnerabilities",
-                []
-            )
-        ),
-        (
-            "Security Findings",
-            result.get(
-                "findings",
-                []
-            )
+    # Score
+    story.append(
+        Paragraph(
+            f"<b>Security Score:</b> {score}/100",
+            normal_style
         )
-    ]
-
-    for title, data in sections:
-
-        story.append(
-            Paragraph(
-                title,
-                heading_style
-            )
-        )
-
-        formatted = safe_json(
-            data
-        )
-
-        formatted = (
-            formatted
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\n", "<br/>")
-        )
-
-        chunks = [
-            formatted[i:i + 5000]
-            for i in range(
-                0,
-                len(formatted),
-                5000
-            )
-        ]
-
-        if not chunks:
-            chunks = [
-                "No data available."
-            ]
-
-        for chunk in chunks:
-
-            story.append(
-                Paragraph(
-                    chunk,
-                    body_style
-                )
-            )
-
-            story.append(
-                Spacer(1, 8)
-            )
-
-    document.build(
-        story
     )
+
+    story.append(
+        Spacer(1, 10)
+    )
+
+    # Risk
+    story.append(
+        Paragraph(
+            f"<b>Risk Level:</b> {risk}",
+            normal_style
+        )
+    )
+
+    story.append(
+        Spacer(1, 20)
+    )
+
+    # Results
+    story.append(
+        Paragraph(
+            "Scan Results",
+            heading_style
+        )
+    )
+
+    story.append(
+        Spacer(1, 10)
+    )
+
+    story.append(
+        Preformatted(
+            formatted_json,
+            styles["Code"]
+        )
+    )
+
+    story.append(
+        Spacer(1, 25)
+    )
+
+    # Developer
+    story.append(
+        Paragraph(
+            "<b>WebGuard</b> — Web Security Scanner",
+            normal_style
+        )
+    )
+
+    story.append(
+        Spacer(1, 8)
+    )
+
+    story.append(
+        Paragraph(
+            "Developed by <b>Veeresh S.</b>",
+            normal_style
+        )
+    )
+
+    story.append(
+        Spacer(1, 8)
+    )
+
+    story.append(
+        Paragraph(
+            "GitHub: "
+            f"{GITHUB_URL}",
+            normal_style
+        )
+    )
+
+    story.append(
+        Spacer(1, 8)
+    )
+
+    story.append(
+        Paragraph(
+            "Use WebGuard only on websites and systems "
+            "you own or are authorized to assess.",
+            normal_style
+        )
+    )
+
+    document.build(story)
 
     pdf_buffer.seek(0)
 
     return send_file(
         pdf_buffer,
+        mimetype="application/pdf",
         as_attachment=True,
-        download_name=(
-            "webguard_security_report.pdf"
-        ),
-        mimetype="application/pdf"
+        download_name="WebGuard_Security_Report.pdf"
     )
 
 
@@ -817,7 +600,7 @@ def page_not_found(error):
         "index.html",
         result=None,
         error="Page not found.",
-        scanned_url=""
+        target_url=""
     ), 404
 
 
@@ -827,26 +610,16 @@ def internal_server_error(error):
     return render_template(
         "index.html",
         result=None,
-        error="Internal server error.",
-        scanned_url=""
+        error="Internal server error. Please try again.",
+        target_url=""
     ), 500
 
 
 # ============================================================
-# START SERVER
+# APPLICATION START
 # ============================================================
 
 if __name__ == "__main__":
-
-    print("=" * 60)
-    print("WebGuard - Web Security Scanner")
-    print("=" * 60)
-    print(
-        "Local URL: "
-        "http://127.0.0.1:5000"
-    )
-    print("Scanner ready.")
-    print("=" * 60)
 
     app.run(
         host="127.0.0.1",
