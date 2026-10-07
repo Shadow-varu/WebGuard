@@ -23,7 +23,7 @@ SECURITY_HEADERS = [
     "X-Content-Type-Options",
     "X-Frame-Options",
     "Referrer-Policy",
-    "Permissions-Policy"
+    "Permissions-Policy",
 ]
 
 
@@ -31,7 +31,9 @@ def normalize_url(url):
 
     url = url.strip()
 
-    if not url.startswith(("http://", "https://")):
+    if not url.startswith(
+        ("http://", "https://")
+    ):
         url = "https://" + url
 
     return url
@@ -47,7 +49,7 @@ def get_ssl_info(hostname):
         "subject": None,
         "expires": None,
         "days_remaining": None,
-        "error": None
+        "error": None,
     }
 
     try:
@@ -64,7 +66,9 @@ def get_ssl_info(hostname):
                 server_hostname=hostname
             ) as secure_socket:
 
-                certificate = secure_socket.getpeercert()
+                certificate = (
+                    secure_socket.getpeercert()
+                )
 
                 result["tls_version"] = (
                     secure_socket.version()
@@ -106,7 +110,9 @@ def get_ssl_info(hostname):
                         tzinfo=timezone.utc
                     )
 
-                    now = datetime.now(timezone.utc)
+                    now = datetime.now(
+                        timezone.utc
+                    )
 
                     days_remaining = (
                         expires_dt - now
@@ -122,10 +128,11 @@ def get_ssl_info(hostname):
                         days_remaining
                     )
 
-                    if days_remaining >= 0:
-                        result["status"] = "Valid"
-                    else:
-                        result["status"] = "Expired"
+                    result["status"] = (
+                        "Valid"
+                        if days_remaining >= 0
+                        else "Expired"
+                    )
 
     except Exception as error:
 
@@ -144,14 +151,7 @@ def get_dns_records(hostname):
         "NS": []
     }
 
-    record_types = [
-        "A",
-        "AAAA",
-        "MX",
-        "NS"
-    ]
-
-    for record_type in record_types:
+    for record_type in result:
 
         try:
 
@@ -161,11 +161,10 @@ def get_dns_records(hostname):
                 lifetime=5
             )
 
-            for answer in answers:
-
-                result[record_type].append(
-                    str(answer)
-                )
+            result[record_type] = [
+                str(answer)
+                for answer in answers
+            ]
 
         except Exception:
             pass
@@ -183,6 +182,7 @@ def detect_technology(response):
     server = headers.get("Server")
 
     if server:
+
         technologies.append({
             "name": "Web Server",
             "value": server
@@ -193,23 +193,27 @@ def detect_technology(response):
     )
 
     if powered_by:
+
         technologies.append({
             "name": "X-Powered-By",
             "value": powered_by
         })
 
-    if "cloudflare" in (
-        headers.get("Server", "").lower()
-    ):
+    if "cloudflare" in headers.get(
+        "Server",
+        ""
+    ).lower():
+
         technologies.append({
             "name": "Cloudflare",
             "value": "Detected"
         })
 
     technology_checks = [
+
         ("WordPress", "wp-content"),
         ("WordPress", "wp-includes"),
-        ("Drupal", "drupalSettings"),
+        ("Drupal", "drupalsettings"),
         ("Joomla", "/media/system/"),
         ("React", "react"),
         ("Next.js", "_next/"),
@@ -221,7 +225,8 @@ def detect_technology(response):
         ("Django", "csrfmiddlewaretoken"),
         ("Laravel", "laravel_session"),
         ("Nginx", "nginx"),
-        ("Apache", "apache")
+        ("Apache", "apache"),
+
     ]
 
     found = set()
@@ -250,13 +255,19 @@ def analyze_security_headers(response):
 
     for header in SECURITY_HEADERS:
 
-        if response.headers.get(header):
+        value = response.headers.get(
+            header
+        )
+
+        if value:
+
             present.append({
                 "name": header,
-                "value": response.headers.get(header)
+                "value": value
             })
 
         else:
+
             missing.append(header)
 
     return {
@@ -291,20 +302,28 @@ def analyze_cookies(response):
         if not parts:
             continue
 
-        cookie_name = parts[0].split(
-            "=",
-            1
-        )[0]
+        cookie_name = (
+            parts[0].split(
+                "=",
+                1
+            )[0]
+        )
 
         cookie_text = raw_cookie.lower()
 
         cookies.append({
+
             "name": cookie_name,
-            "secure": "secure" in cookie_text,
-            "httponly": "httponly" in cookie_text,
-            "samesite": (
-                "samesite=" in cookie_text
-            )
+
+            "secure":
+                "secure" in cookie_text,
+
+            "httponly":
+                "httponly" in cookie_text,
+
+            "samesite":
+                "samesite=" in cookie_text,
+
         })
 
     return cookies
@@ -314,7 +333,9 @@ def analyze_http_security(response):
 
     headers = response.headers
 
-    allow_header = headers.get("Allow")
+    allow_header = headers.get(
+        "Allow"
+    )
 
     methods = []
 
@@ -326,22 +347,28 @@ def analyze_http_security(response):
         ]
 
     return {
+
         "methods": methods,
-        "content_type": headers.get(
-            "Content-Type"
-        ),
-        "server": headers.get(
-            "Server"
-        ),
-        "hsts": headers.get(
-            "Strict-Transport-Security"
-        ),
-        "csp": headers.get(
-            "Content-Security-Policy"
-        ),
-        "cache_control": headers.get(
-            "Cache-Control"
-        )
+
+        "content_type":
+            headers.get("Content-Type"),
+
+        "server":
+            headers.get("Server"),
+
+        "hsts":
+            headers.get(
+                "Strict-Transport-Security"
+            ),
+
+        "csp":
+            headers.get(
+                "Content-Security-Policy"
+            ),
+
+        "cache_control":
+            headers.get("Cache-Control"),
+
     }
 
 
@@ -375,11 +402,21 @@ def analyze_cors(response):
             status = "Configured"
 
     return {
+
         "status": status,
-        "allow_origin": allow_origin,
-        "allow_methods": allow_methods,
-        "allow_headers": allow_headers,
-        "allow_credentials": allow_credentials
+
+        "allow_origin":
+            allow_origin,
+
+        "allow_methods":
+            allow_methods,
+
+        "allow_headers":
+            allow_headers,
+
+        "allow_credentials":
+            allow_credentials
+
     }
 
 
@@ -394,215 +431,220 @@ def get_owasp_checks(
     checks = []
 
     checks.append({
-        "name": "HTTPS Configuration",
-        "status": "PASS" if https else "FAIL",
-        "description": (
-            "HTTPS is enabled."
-            if https
-            else
-            "Website is not using HTTPS."
-        )
+
+        "name":
+            "HTTPS Configuration",
+
+        "status":
+            "PASS" if https else "FAIL",
+
+        "description":
+            (
+                "HTTPS is enabled."
+                if https
+                else
+                "Website is not using HTTPS."
+            )
+
     })
 
-    checks.append({
-        "name": "Content Security Policy",
-        "status": (
-            "PASS"
-            if "Content-Security-Policy"
-            not in header_analysis["missing"]
-            else "FAIL"
-        ),
-        "description": (
-            "CSP header detected."
-            if "Content-Security-Policy"
-            not in header_analysis["missing"]
-            else
-            "CSP header is missing."
-        )
-    })
+    header_checks = [
 
-    checks.append({
-        "name": "HSTS",
-        "status": (
-            "PASS"
-            if "Strict-Transport-Security"
-            not in header_analysis["missing"]
-            else "FAIL"
+        (
+            "Content Security Policy",
+            "Content-Security-Policy",
+            "CSP header"
         ),
-        "description": (
-            "HSTS detected."
-            if "Strict-Transport-Security"
-            not in header_analysis["missing"]
-            else
-            "HSTS header is missing."
-        )
-    })
 
-    checks.append({
-        "name": "Clickjacking Protection",
-        "status": (
-            "PASS"
-            if "X-Frame-Options"
-            not in header_analysis["missing"]
-            else "FAIL"
+        (
+            "HSTS",
+            "Strict-Transport-Security",
+            "HSTS"
         ),
-        "description": (
-            "X-Frame-Options detected."
-            if "X-Frame-Options"
-            not in header_analysis["missing"]
-            else
-            "Clickjacking protection header is missing."
-        )
-    })
 
-    checks.append({
-        "name": "MIME Sniffing Protection",
-        "status": (
-            "PASS"
-            if "X-Content-Type-Options"
-            not in header_analysis["missing"]
-            else "FAIL"
+        (
+            "Clickjacking Protection",
+            "X-Frame-Options",
+            "X-Frame-Options"
         ),
-        "description": (
-            "MIME sniffing protection detected."
-            if "X-Content-Type-Options"
-            not in header_analysis["missing"]
-            else
-            "X-Content-Type-Options is missing."
-        )
-    })
 
-    checks.append({
-        "name": "Referrer Policy",
-        "status": (
-            "PASS"
-            if "Referrer-Policy"
-            not in header_analysis["missing"]
-            else "FAIL"
+        (
+            "MIME Sniffing Protection",
+            "X-Content-Type-Options",
+            "X-Content-Type-Options"
         ),
-        "description": (
-            "Referrer-Policy detected."
-            if "Referrer-Policy"
-            not in header_analysis["missing"]
-            else
-            "Referrer-Policy is missing."
-        )
-    })
 
-    checks.append({
-        "name": "Permissions Policy",
-        "status": (
-            "PASS"
-            if "Permissions-Policy"
-            not in header_analysis["missing"]
-            else "FAIL"
+        (
+            "Referrer Policy",
+            "Referrer-Policy",
+            "Referrer-Policy"
         ),
-        "description": (
-            "Permissions-Policy detected."
-            if "Permissions-Policy"
+
+        (
+            "Permissions Policy",
+            "Permissions-Policy",
+            "Permissions-Policy"
+        ),
+
+    ]
+
+    for name, header, label in header_checks:
+
+        present = (
+            header
             not in header_analysis["missing"]
-            else
-            "Permissions-Policy is missing."
         )
-    })
+
+        checks.append({
+
+            "name": name,
+
+            "status":
+                "PASS" if present else "FAIL",
+
+            "description":
+                (
+                    f"{label} detected."
+                    if present
+                    else
+                    f"{label} is missing."
+                )
+
+        })
 
     if cookies:
 
-        insecure_cookies = []
+        insecure = []
 
         for cookie in cookies:
 
             if not cookie["secure"]:
-                insecure_cookies.append(
+                insecure.append(
                     cookie["name"]
                 )
 
             if not cookie["httponly"]:
-                insecure_cookies.append(
+                insecure.append(
                     cookie["name"]
                 )
 
             if not cookie["samesite"]:
-                insecure_cookies.append(
+                insecure.append(
                     cookie["name"]
                 )
 
         checks.append({
-            "name": "Cookie Security",
-            "status": (
-                "PASS"
-                if not insecure_cookies
-                else "REVIEW"
-            ),
-            "description": (
-                "Cookie security flags look good."
-                if not insecure_cookies
-                else
-                "One or more cookie security flags "
-                "may be missing."
-            )
+
+            "name":
+                "Cookie Security",
+
+            "status":
+                (
+                    "PASS"
+                    if not insecure
+                    else
+                    "REVIEW"
+                ),
+
+            "description":
+                (
+                    "Cookie security flags look good."
+                    if not insecure
+                    else
+                    "One or more cookie security "
+                    "flags may be missing."
+                )
+
         })
 
     else:
 
         checks.append({
-            "name": "Cookie Security",
-            "status": "REVIEW",
-            "description": (
+
+            "name":
+                "Cookie Security",
+
+            "status":
+                "REVIEW",
+
+            "description":
                 "No cookies were detected."
-            )
+
         })
 
     if cors["allow_origin"]:
 
         checks.append({
-            "name": "CORS Configuration",
-            "status": (
-                "REVIEW"
-                if cors["allow_origin"] == "*"
-                else "PASS"
-            ),
-            "description": (
-                "Wildcard CORS configuration detected."
-                if cors["allow_origin"] == "*"
-                else
-                "CORS configuration detected."
-            )
+
+            "name":
+                "CORS Configuration",
+
+            "status":
+                (
+                    "REVIEW"
+                    if cors["allow_origin"] == "*"
+                    else
+                    "PASS"
+                ),
+
+            "description":
+                (
+                    "Wildcard CORS configuration detected."
+                    if cors["allow_origin"] == "*"
+                    else
+                    "CORS configuration detected."
+                )
+
         })
 
     else:
 
         checks.append({
-            "name": "CORS Configuration",
-            "status": "REVIEW",
-            "description": (
+
+            "name":
+                "CORS Configuration",
+
+            "status":
+                "REVIEW",
+
+            "description":
                 "No CORS headers were detected."
-            )
+
         })
 
     has_disclosure = any(
-        finding["name"]
-        in [
+
+        finding["name"] in {
             "Server Information Disclosure",
             "Technology Information Disclosure"
-        ]
+        }
+
         for finding in vulnerabilities
+
     )
 
     checks.append({
-        "name": "Information Disclosure",
-        "status": (
-            "REVIEW"
-            if has_disclosure
-            else "PASS"
-        ),
-        "description": (
-            "Some server technology information "
-            "may be exposed."
-            if has_disclosure
-            else
-            "No obvious server disclosure issue detected."
-        )
+
+        "name":
+            "Information Disclosure",
+
+        "status":
+            (
+                "REVIEW"
+                if has_disclosure
+                else
+                "PASS"
+            ),
+
+        "description":
+            (
+                "Some server technology information "
+                "may be exposed."
+                if has_disclosure
+                else
+                "No obvious server disclosure issue detected."
+            )
+
     })
 
     return checks
@@ -620,7 +662,9 @@ def calculate_score(
     if not https:
         score -= 20
 
-    score -= len(missing_headers) * 7
+    score -= (
+        len(missing_headers) * 7
+    )
 
     for cookie in cookies:
 
@@ -678,43 +722,61 @@ def create_findings(
     if not https:
 
         findings.append({
-            "severity": "High",
-            "name": "HTTPS Not Enabled",
-            "description": (
-                "The target website is not using HTTPS."
-            ),
-            "recommendation": (
+
+            "severity":
+                "High",
+
+            "name":
+                "HTTPS Not Enabled",
+
+            "description":
+                "The target website is not using HTTPS.",
+
+            "recommendation":
                 "Enable HTTPS using a valid TLS certificate."
-            )
+
         })
 
     for header in header_analysis["missing"]:
 
         findings.append({
-            "severity": "Medium",
-            "name": f"Missing {header}",
-            "description": (
-                f"The {header} security header "
-                "was not detected."
-            ),
-            "recommendation": (
-                f"Configure the {header} "
-                "response header."
-            )
+
+            "severity":
+                "Medium",
+
+            "name":
+                f"Missing {header}",
+
+            "description":
+                (
+                    f"The {header} security header "
+                    "was not detected."
+                ),
+
+            "recommendation":
+                (
+                    f"Configure the {header} "
+                    "response header."
+                )
+
         })
 
-    for finding in vulnerabilities:
-
-        findings.append(finding)
+    findings.extend(
+        vulnerabilities
+    )
 
     return findings
 
 
 def scan_url(url):
 
-    original_url = normalize_url(url)
+    original_url = normalize_url(
+        url
+    )
 
-    parsed = urlparse(original_url)
+    parsed = urlparse(
+        original_url
+    )
 
     if not parsed.hostname:
         raise ValueError(
@@ -724,16 +786,33 @@ def scan_url(url):
     start_time = time.perf_counter()
 
     response = requests.get(
+
         original_url,
+
         headers=HEADERS,
+
         timeout=15,
-        allow_redirects=True
+
+        allow_redirects=True,
+
+        stream=True
+
     )
 
     response_time = round(
-        time.perf_counter() - start_time,
+        time.perf_counter()
+        - start_time,
         3
     )
+
+    body = response.raw.read(
+        2 * 1024 * 1024,
+        decode_content=True
+    )
+
+    response._content = body
+
+    response.close()
 
     final_url = response.url
 
@@ -749,20 +828,31 @@ def scan_url(url):
     )
 
     redirect_chain = [
+
         {
             "url": item.url,
-            "status_code": item.status_code
+            "status_code":
+                item.status_code
         }
+
         for item in response.history
+
     ]
 
     redirect_chain.append({
-        "url": response.url,
-        "status_code": response.status_code
+
+        "url":
+            response.url,
+
+        "status_code":
+            response.status_code
+
     })
 
-    header_analysis = analyze_security_headers(
-        response
+    header_analysis = (
+        analyze_security_headers(
+            response
+        )
     )
 
     cookies = analyze_cookies(
@@ -773,15 +863,15 @@ def scan_url(url):
         response
     )
 
-    http_security = analyze_http_security(
-        response
+    http_security = (
+        analyze_http_security(
+            response
+        )
     )
 
     cors = analyze_cors(
         response
     )
-
-    ssl_info = {}
 
     if hostname and https:
 
@@ -792,31 +882,56 @@ def scan_url(url):
     else:
 
         ssl_info = {
-            "status": "Not Applicable",
-            "tls_version": None,
-            "cipher": None,
-            "issuer": None,
-            "subject": None,
-            "expires": None,
-            "days_remaining": None,
-            "error": None
+
+            "status":
+                "Not Applicable",
+
+            "tls_version":
+                None,
+
+            "cipher":
+                None,
+
+            "issuer":
+                None,
+
+            "subject":
+                None,
+
+            "expires":
+                None,
+
+            "days_remaining":
+                None,
+
+            "error":
+                None
+
         }
 
     dns_records = get_dns_records(
         hostname
     )
 
-    vulnerabilities = run_vulnerability_scan(
-        final_url,
-        response
+    vulnerabilities = (
+        run_vulnerability_scan(
+            final_url,
+            response
+        )
     )
 
     owasp = get_owasp_checks(
+
         https,
+
         header_analysis,
+
         cookies,
+
         cors,
+
         vulnerabilities
+
     )
 
     ports = scan_ports(
@@ -827,58 +942,118 @@ def scan_url(url):
         final_url
     )
 
-    security_score, risk_level = calculate_score(
-        https,
-        header_analysis["missing"],
-        cookies,
-        vulnerabilities
+    security_score, risk_level = (
+        calculate_score(
+
+            https,
+
+            header_analysis["missing"],
+
+            cookies,
+
+            vulnerabilities
+
+        )
     )
 
     findings = create_findings(
+
         https,
+
         header_analysis,
+
         cookies,
+
         vulnerabilities
+
     )
 
     summary = {
-        "headers_present": len(
-            header_analysis["present"]
-        ),
-        "headers_missing": len(
-            header_analysis["missing"]
-        ),
-        "cookies_count": len(
-            cookies
-        ),
-        "findings": len(
-            findings
-        )
+
+        "headers_present":
+            len(
+                header_analysis["present"]
+            ),
+
+        "headers_missing":
+            len(
+                header_analysis["missing"]
+            ),
+
+        "cookies_count":
+            len(cookies),
+
+        "findings":
+            len(findings)
+
     }
 
     return {
-        "original_url": original_url,
-        "final_url": final_url,
-        "status_code": response.status_code,
-        "https": https,
-        "redirects": len(
-            response.history
-        ),
-        "redirect_chain": redirect_chain,
-        "response_time": response_time,
-        "dns": dns_records,
-        "ssl": ssl_info,
-        "technology": technology,
-        "http_security": http_security,
-        "cors": cors,
-        "owasp": owasp,
-        "headers": header_analysis,
-        "cookies": cookies,
-        "ports": ports,
-        "recon": recon,
-        "vulnerabilities": vulnerabilities,
-        "security_score": security_score,
-        "risk_level": risk_level,
-        "summary": summary,
-        "findings": findings
+
+        "original_url":
+            original_url,
+
+        "final_url":
+            final_url,
+
+        "status_code":
+            response.status_code,
+
+        "https":
+            https,
+
+        "redirects":
+            len(response.history),
+
+        "redirect_chain":
+            redirect_chain,
+
+        "response_time":
+            response_time,
+
+        "dns":
+            dns_records,
+
+        "ssl":
+            ssl_info,
+
+        "technology":
+            technology,
+
+        "http_security":
+            http_security,
+
+        "cors":
+            cors,
+
+        "owasp":
+            owasp,
+
+        "headers":
+            header_analysis,
+
+        "cookies":
+            cookies,
+
+        "ports":
+            ports,
+
+        "recon":
+            recon,
+
+        "vulnerabilities":
+            vulnerabilities,
+
+        "security_score":
+            security_score,
+
+        "risk_level":
+            risk_level,
+
+        "summary":
+            summary,
+
+        "findings":
+            findings
+
     }

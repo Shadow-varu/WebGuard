@@ -1,34 +1,33 @@
-# 🛡️ WebGuard
+# WebGuard
 
-## Web Security Scanner
+WebGuard is a web security scanner built with Python and Flask.
 
-WebGuard is a Python and Flask based web security scanner that performs passive and authorized security analysis of websites.
+## Features
 
-## 🚀 Features
+- HTTPS detection
+- HTTP status
+- Redirect chain
+- Response time
+- SSL/TLS information
+- Certificate expiry
+- DNS records
+- Technology detection
+- Security headers
+- Cookie security flags
+- HTTP security analysis
+- CORS analysis
+- OWASP-style passive checks
+- Common TCP port scan
+- Basic reconnaissance
+- Passive vulnerability findings
+- Security score
+- HTML report
+- PDF report
+- robots.txt
+- sitemap.xml
+- Google Search Console verification
 
-- HTTPS Detection
-- HTTP Status Analysis
-- Redirect Chain Analysis
-- Response Time Measurement
-- SSL/TLS Certificate Analysis
-- Certificate Expiry Check
-- DNS Analysis
-- Technology Detection
-- Security Headers Analysis
-- Cookie Security Analysis
-- HTTP Security Analysis
-- CORS Analysis
-- OWASP-Style Security Checks
-- Common TCP Port Scanning
-- Passive Reconnaissance
-- Passive Vulnerability Analysis
-- Security Score
-- Risk Level
-- Security Findings
-- HTML Report Generation
-- PDF Report Generation
-
-## 🛠️ Tech Stack
+## Tech Stack
 
 - Python
 - Flask
@@ -37,27 +36,10 @@ WebGuard is a Python and Flask based web security scanner that performs passive 
 - ReportLab
 - HTML
 - CSS
+- Gunicorn
 
-## 📁 Project Structure
+## Local Setup
 
-```text
-WebGuard/
-├── app.py
-├── scanner.py
-├── port_scanner.py
-├── recon.py
-├── vulnerability_scanner.py
-├── security.py
-├── requirements.txt
-├── Procfile
-├── README.md
-├── .gitignore
-│
-├── templates/
-│   └── index.html
-│
-├── static/
-│   └── style.css
-│
-└── reports/
+```bash
+python -m venv venv
 ```

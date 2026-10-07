@@ -29,6 +29,7 @@ COMMON_PORTS = {
 
 
 def scan_ports(host, timeout=0.5):
+
     result = {
         "host": host,
         "ip": None,
@@ -38,15 +39,27 @@ def scan_ports(host, timeout=0.5):
     }
 
     if not host:
-        result["error"] = "Host not provided."
+
+        result["error"] = (
+            "Host not provided."
+        )
+
         return result
 
     try:
-        ip_address = socket.gethostbyname(host)
+
+        ip_address = socket.gethostbyname(
+            host
+        )
+
         result["ip"] = ip_address
 
     except socket.gaierror:
-        result["error"] = "Unable to resolve hostname."
+
+        result["error"] = (
+            "Unable to resolve hostname."
+        )
+
         return result
 
     for port, service in COMMON_PORTS.items():
@@ -59,15 +72,21 @@ def scan_ports(host, timeout=0.5):
         sock.settimeout(timeout)
 
         try:
+
             connection = sock.connect_ex(
                 (ip_address, port)
             )
 
             if connection == 0:
+
                 result["open_ports"].append({
+
                     "port": port,
+
                     "service": service,
+
                     "status": "Open"
+
                 })
 
         except socket.error:
